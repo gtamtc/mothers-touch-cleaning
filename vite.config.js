@@ -13,6 +13,13 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 5173
+    port: 5173,
+    hmr: {
+      host: '5173-iwu5f0rk5t8qzkkdeff4v-2ac5772c.manusvm.computer',
+      protocol: 'wss'
+    },
+    watch: {
+      usePolling: true
+    }
   }
 })

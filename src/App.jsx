@@ -7,7 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox.jsx'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.jsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
-import { Upload, Sparkles, Home, Phone, Mail, Loader2 } from 'lucide-react'
+import { Sparkles, Home, Phone, Mail, Loader2 } from 'lucide-react'
+import PhotoUpload from './components/PhotoUpload'
+
 import './App.css'
 
 function App() {
@@ -42,6 +44,12 @@ function App() {
   const [showCustomResidenceType, setShowCustomResidenceType] = useState(false)
   const [showThankYou, setShowThankYou] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState([])
+  const [quoteData, setQuoteData] = useState(null)
+
+  const handlePhotosUploaded = (newPhotos) => {
+    setUploadedPhotoUrls(prev => [...prev, ...newPhotos.map(p => p.url)])
+  }
 
   const handleInputChange = (field, value) => {
     // Enhanced cleaning option logic - check before updating state
@@ -111,13 +119,25 @@ function App() {
     setIsSubmitting(true)
     
     try {
-      // Simulate API call with a delay
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Enviar dados para o backend em produção
+      const response = await fetch('https://lnh8imcwv80g.manus.space/api/submit-quote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...formData, uploadedPhotoUrls })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
       
-      // Simulate successful response
-      console.log('Form data submitted:', formData)
+      // Armazenar informações da cotação para a página de agradecimento
+      setQuoteData(result.quote_data)
       
-      // Show thank you message
+      // Mostrar página de agradecimento
       setShowThankYou(true)
       
     } catch (error) {
@@ -149,7 +169,7 @@ function App() {
         </div>
 
         {showThankYou ? (
-          /* Thank You Message */
+          /* Thank You Message with PDF and Sharing Options */
           <Card className="text-center">
             <CardContent className="py-12">
               <div className="flex items-center justify-center gap-2 mb-6">
@@ -157,25 +177,126 @@ function App() {
                 <h2 className="text-3xl font-bold text-gray-900">Thank You!</h2>
                 <Sparkles className="h-12 w-12 text-green-600" />
               </div>
-              <p className="text-xl text-gray-600 mb-4">
-                Your quote request has been submitted successfully.
+              
+              <p className="text-xl text-gray-600 mb-6">
+                Your quote request has been processed successfully!
               </p>
-              
-              <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
-                <h3 className="text-xl font-bold text-red-800 mb-3">
-                  📧 PLEASE SEND THIS PDF TO OUR EMAIL
-                </h3>
-                <p className="text-red-700 mb-2">
-                  A detailed PDF quote has been created for you. Please send this PDF along with photos of the areas to be cleaned to:
-                </p>
-                <p className="text-lg font-bold text-red-800 mb-3">
-                  gtamtc@outlook.com
-                </p>
-                <p className="text-red-700 text-sm">
-                  <strong>Required photos:</strong> bedrooms, bathrooms, bathtubs, living room, dining area, kitchen, and any other areas you would like cleaned.
-                </p>
+
+              {/* Business Card */}
+              <div className="bg-gradient-to-r from-purple-600 to-violet-600 text-white p-8 rounded-lg shadow-lg mb-8 max-w-md mx-auto">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <Sparkles className="h-8 w-8" />
+                  <h3 className="text-2xl font-bold">Mother's Touch Cleaning</h3>
+                  <Sparkles className="h-8 w-8" />
+                </div>
+                <p className="text-lg mb-2">Professional Cleaning Services</p>
+                <div className="space-y-1 text-sm">
+                  <p className="flex items-center justify-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    gtamtc@outlook.com
+                  </p>
+                  <p className="flex items-center justify-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    [Your Phone Number]
+                  </p>
+                </div>
               </div>
-              
+
+              {/* Quote Summary and Instructions */}
+              {quoteData && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                  <h3 className="text-xl font-bold text-blue-800 mb-3">
+                    📄 Your Quote Summary is Ready!
+                  </h3>
+                  <p className="text-blue-700 mb-4">
+                    We've processed your quote information. Please copy the summary below and send it to us along with photos.
+                  </p>
+                  
+                  <div className="bg-white p-4 rounded border text-sm text-left mb-4 max-h-60 overflow-y-auto">
+                    <pre className="whitespace-pre-wrap font-mono">{quoteData.summary}</pre>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(quoteData.summary)
+                      alert('Quote summary copied to clipboard!')
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 mb-4"
+                  >
+                    📋 Copy Quote Summary
+                  </Button>
+                </div>
+              )}
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+                <h3 className="text-xl font-bold text-yellow-800 mb-3">
+                  📸 Next Steps
+                </h3>
+                <p className="text-yellow-700 mb-4">
+                  Please attach photos of: <strong>bedrooms, bathrooms, bathtubs, living room, dining area, kitchen, and any other areas</strong> you would like cleaned when you send us the quote.
+                </p>
+                
+                <div className="space-y-3">
+                  <p className="text-yellow-800 font-semibold">Send your PDF and photos to:</p>
+                  
+                  {/* Email Option */}
+                  <Button 
+                    onClick={() => {
+                      const subject = encodeURIComponent('Cleaning Quote Request - Mother\'s Touch Cleaning')
+                      const body = encodeURIComponent(`Hi Mother's Touch Cleaning,
+
+I'm sending my quote request along with photos of the areas to be cleaned.
+
+${quoteData ? quoteData.summary : 'Quote information processed'}
+
+Looking forward to your response!
+
+Best regards,
+${formData.name}`)
+                      window.open(`mailto:gtamtc@outlook.com?subject=${subject}&body=${body}`)
+                    }}
+                    className="bg-green-600 hover:bg-green-700 w-full mb-2"
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Send via Email
+                  </Button>
+
+                  {/* WhatsApp Option */}
+                  <Button 
+                    onClick={() => {
+                      const message = encodeURIComponent(`Hi Mother's Touch Cleaning! I'm sending my quote request. I have the quote summary ready and will attach photos of the areas to be cleaned: bedrooms, bathrooms, bathtubs, living room, dining area, kitchen, and other areas. My name is ${formData.name}.`)
+                      window.open(`https://wa.me/?text=${message}`)
+                    }}
+                    className="bg-green-500 hover:bg-green-600 w-full mb-2"
+                  >
+                    <Phone className="h-4 w-4 mr-2" />
+                    Send via WhatsApp
+                  </Button>
+
+                  {/* Generic Share */}
+                  <Button 
+                    onClick={() => {
+                      if (navigator.share && quoteData) {
+                        navigator.share({
+                          title: 'Cleaning Quote Request',
+                          text: `My cleaning quote request for Mother's Touch Cleaning. Contact: gtamtc@outlook.com`,
+                          url: window.location.href
+                        })
+                      } else {
+                        // Fallback: copy to clipboard
+                        const shareText = `Cleaning Quote Request - Contact: gtamtc@outlook.com\n\n${quoteData ? quoteData.summary : 'Quote processed'}`
+                        navigator.clipboard.writeText(shareText)
+                        alert('Quote information copied to clipboard!')
+                      }
+                    }}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    📤 Share Quote
+                  </Button>
+                </div>
+              </div>
+
               <p className="text-lg text-gray-700 mb-6">
                 We will review your information and photos to provide you with the most accurate quote for your cleaning needs.
               </p>
@@ -183,6 +304,8 @@ function App() {
               <Button 
                 onClick={() => {
                   setShowThankYou(false)
+                  setQuoteData(null)
+                  setUploadedPhotoUrls([])
                   setFormData({
                     name: '',
                     email: '',
@@ -541,12 +664,10 @@ function App() {
 
               <div className="bg-purple-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-purple-800 mb-2">For Accurate Pricing</h3>
-                <p className="text-purple-700 text-sm">
+                <p className="text-purple-700 text-sm mb-4">
                   To provide you with the most accurate quote, we require photos of the spaces to be cleaned.
                 </p>
-                <p className="text-purple-700 text-sm">
-                  Please attach photos of: <strong>bedrooms, bathrooms, bathtubs, living room, dining area, kitchen, and any other areas</strong> you would like cleaned when you send us the quote.
-                </p>
+                <PhotoUpload onPhotosUploaded={handlePhotosUploaded} backendUrl="http://localhost:5000" />
               </div>
             </CardContent>
           </Card>
