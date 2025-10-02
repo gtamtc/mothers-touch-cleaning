@@ -120,7 +120,7 @@ function App() {
     
     try {
       // Enviar dados para o backend em produção
-      const response = await fetch('https://lnh8imcwv80g.manus.space/api/submit-quote', {
+      const response = await fetch("https://lnh8imcwv80g.manus.space/api/quote", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
